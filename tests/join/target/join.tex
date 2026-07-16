@@ -1,0 +1,75 @@
+\documentclass[a4paper,
+  11pt, twoside,
+onecolumn]{article}
+\usepackage{amsmath}
+\usepackage{graphicx}
+
+\begin{document}
+
+A paragraph with short lines that should be joined together and then
+rewrapped so that the resulting lines fill the configured width. Even
+one-sentence-per-line style text gets reflowed into full paragraphs
+by this option.
+
+Short lines ending with a comment % note
+stop the joining here.
+
+A line ending with a forced break \\
+must not absorb the next line.
+Neither should a starred break \\*
+nor a spaced break \\[2pt]
+absorb their next lines.
+
+A line ending with a hyphen-
+ated word is not joined.
+
+% Full comment lines
+% are never joined.
+
+Text before display math is kept separate.
+\[
+  E = m c^2
+\]
+Text after display math joins as usual.
+
+\begin{verbatim}
+verbatim lines
+stay untouched
+\end{verbatim}
+
+this text
+is not joined % tex-fmt: off
+neither
+is this
+% tex-fmt: on
+
+\begin{tabular}{cc}
+  a & b \\
+  c & d \\
+\end{tabular}
+
+\hypersetup{
+  colorlinks,
+  linkcolor={blue!80!black},
+  pdftitle={A multi-line title with
+  a key-value assignment is not joined},
+}
+
+\begin{equation}
+  a + b
+  + c = d
+\end{equation}
+
+\paragraph{Heading.} Run-in headings reflow together with their paragraph text.
+
+\emph{
+  Text inside a brace group is reflowed as usual, but the closing
+  brace below stays on its own line.
+}
+
+\begin{itemize}
+  \item An item line
+    with a continuation which joins.
+\end{itemize}
+
+\end{document}

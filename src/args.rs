@@ -29,6 +29,8 @@ pub struct Args {
     pub wraplen: usize,
     /// Wrap lines longer than this
     pub wrapmin: usize,
+    /// Join short lines within paragraphs before wrapping
+    pub join: bool,
     /// Number of characters to use as tab size
     pub tabsize: u8,
     /// Characters to use for indentation
@@ -73,6 +75,8 @@ pub struct OptionArgs {
     pub wraplen: Option<usize>,
     #[merge(strategy= merge::option::overwrite_none)]
     pub wrapmin: Option<usize>,
+    #[merge(strategy= merge::option::overwrite_none)]
+    pub join: Option<bool>,
     #[merge(strategy= merge::option::overwrite_none)]
     pub tabsize: Option<u8>,
     #[merge(strategy= merge::option::overwrite_none)]
@@ -155,6 +159,7 @@ impl Default for OptionArgs {
             wrap: Some(true),
             wraplen: Some(80),
             wrapmin: None,
+            join: Some(false),
             tabsize: Some(2),
             tabchar: Some(TabChar::Space),
             stdin: Some(false),
@@ -183,6 +188,7 @@ impl OptionArgs {
             wrap: None,
             wraplen: None,
             wrapmin: None,
+            join: None,
             tabsize: None,
             tabchar: None,
             stdin: None,
@@ -247,6 +253,7 @@ impl Args {
             wrap: args.wrap.unwrap(),
             wraplen: args.wraplen.unwrap(),
             wrapmin,
+            join: args.join.unwrap(),
             tabsize: args.tabsize.unwrap(),
             tabchar: args.tabchar.unwrap(),
             stdin: args.stdin.unwrap(),
@@ -270,6 +277,16 @@ impl Args {
 
         // stdin implies print
         self.print |= self.stdin;
+
+        // Joining lines without wrapping produces very long lines
+        if self.join && !self.wrap {
+            record_file_log(
+                logs,
+                Level::Warn,
+                &empty_path,
+                "Joining lines without wrapping may create very long lines.",
+            );
+        }
 
         // Add .tex to any pathless non-dir file
         for file in &mut self.files {
@@ -397,6 +414,7 @@ impl fmt::Display for Args {
         display_arg_line(f, "wrap", &self.wrap.to_string())?;
         display_arg_line(f, "wraplen", &self.wraplen.to_string())?;
         display_arg_line(f, "wrapmin", &self.wrapmin.to_string())?;
+        display_arg_line(f, "join", &self.join.to_string())?;
         display_arg_line(f, "tabsize", &self.tabsize.to_string())?;
         display_arg_line(f, "tabchar", &self.tabchar.to_string())?;
         display_arg_line(f, "stdin", &self.stdin.to_string())?;

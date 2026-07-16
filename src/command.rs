@@ -40,6 +40,13 @@ pub fn get_cli_command() -> Command {
                 .help("Do not wrap long lines"),
         )
         .arg(
+            Arg::new("join")
+                .short('j')
+                .long("join")
+                .action(SetTrue)
+                .help("Join short lines within paragraphs before wrapping"),
+        )
+        .arg(
             Arg::new("wraplen")
                 .short('l')
                 .long("wraplen")

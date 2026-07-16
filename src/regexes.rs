@@ -51,6 +51,11 @@ pub static RE_NEWLINES: LazyLock<Regex> = LazyLock::new(|| {
 pub static RE_TRAIL: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(&format!(r" +{LINE_END}")).unwrap());
 
+// Regex to match forced line breaks such as \\, \\* and \\[2pt]
+// at the end of a line
+pub static RE_FORCED_BREAK: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"\\\\\*?(\[[^\]]*\])?\s*$").unwrap());
+
 // Regex that matches splitting commands
 pub static RE_SPLITTING: LazyLock<RegexSet> =
     LazyLock::new(|| RegexSet::new(SPLITTING).unwrap());

@@ -29,6 +29,8 @@ _tex-fmt() {
 '--fail-on-change[Format files and return non-zero exit code if files are modified]' \
 '-n[Do not wrap long lines]' \
 '--nowrap[Do not wrap long lines]' \
+'-j[Join short lines within paragraphs before wrapping]' \
+'--join[Join short lines within paragraphs before wrapping]' \
 '--usetabs[Use tabs instead of spaces for indentation]' \
 '-s[Process stdin as a single file, output to stdout]' \
 '--stdin[Process stdin as a single file, output to stdout]' \

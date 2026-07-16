@@ -12,6 +12,7 @@ pub mod config;
 pub mod format;
 pub mod ignore;
 pub mod indent;
+pub mod join;
 pub mod logging;
 pub mod read;
 pub mod regexes;

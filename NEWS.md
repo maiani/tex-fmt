@@ -1,3 +1,6 @@
+- New `--join` option to join short lines within paragraphs before wrapping, reflowing paragraph text to the target line length.
+
+
 # v0.5.7
 
 - New `--format-tables` option to align ampersands and insert line breaks in table environments.

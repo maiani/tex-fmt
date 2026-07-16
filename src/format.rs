@@ -3,6 +3,7 @@
 use crate::args::{Args, TabChar};
 use crate::ignore::{get_ignore, Ignore};
 use crate::indent::{apply_indent, calculate_indent, Indent};
+use crate::join::join_lines;
 use crate::logging::{record_file_log, Log};
 use crate::read::{read, read_stdin};
 use crate::regexes::{ENV_BEGIN, ENV_END, ITEM, RE_SPLITTING, VERBS};
@@ -30,8 +31,24 @@ pub fn format_file(
 ) -> String {
     record_file_log(logs, Info, file, "Formatting started.");
 
-    // Clean the source file and zip its lines with line numbers
-    let old_text = clean_text(old_text, args);
+    // Get special environments
+    let lists_begin = get_begins(&args.lists);
+    let lists_end = get_ends(&args.lists);
+    let verbatims_begin = get_begins(&args.verbatims);
+    let verbatims_end = get_ends(&args.verbatims);
+    let no_indent_envs_begin = get_begins(&args.no_indent_envs);
+    let no_indent_envs_end = get_ends(&args.no_indent_envs);
+
+    // Clean the source file
+    let mut old_text = clean_text(old_text, args);
+
+    // Join short lines within paragraphs
+    if args.join {
+        old_text =
+            join_lines(&old_text, file, logs, &verbatims_begin, &verbatims_end);
+    }
+
+    // Zip the source lines with line numbers
     let mut old_lines = zip(1.., old_text.lines());
 
     // Initialise
@@ -44,14 +61,6 @@ pub fn format_file(
         TabChar::Tab => "\t",
         TabChar::Space => " ",
     };
-
-    // Get special environments
-    let lists_begin = get_begins(&args.lists);
-    let lists_end = get_ends(&args.lists);
-    let verbatims_begin = get_begins(&args.verbatims);
-    let verbatims_end = get_ends(&args.verbatims);
-    let no_indent_envs_begin = get_begins(&args.no_indent_envs);
-    let no_indent_envs_end = get_ends(&args.no_indent_envs);
 
     loop {
         if let Some((linum_old, mut line)) = queue.pop() {
