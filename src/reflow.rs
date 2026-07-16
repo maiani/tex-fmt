@@ -45,6 +45,14 @@ struct LayoutCost {
     lines: usize,
 }
 
+/// Shared paragraph data used to score candidate line breaks.
+struct LayoutContext<'a> {
+    text: &'a str,
+    anchors: &'a [usize],
+    anchor_set: &'a HashSet<usize>,
+    args: &'a Args,
+}
+
 impl LayoutCost {
     fn add(self, other: Self) -> Self {
         Self {
@@ -218,40 +226,47 @@ fn nearest_anchor(position: usize, anchors: &[usize]) -> usize {
 }
 
 fn transition_cost(
-    text: &str,
+    context: &LayoutContext,
     start: usize,
     end: usize,
+    next_end: Option<usize>,
     indent: usize,
-    anchors: &[usize],
-    anchor_set: &HashSet<usize>,
-    args: &Args,
 ) -> LayoutCost {
-    let length = text[start..end].trim().chars().count() + indent;
-    let final_line = end == text.len();
-    let removed_anchors = anchors
+    let length = context.text[start..end].trim().chars().count() + indent;
+    let final_line = end == context.text.len();
+    let reaches_target_with_next_chunk = next_end.is_some_and(|next| {
+        context.text[start..next].trim().chars().count() + indent
+            >= context.args.wrapmin
+    });
+    let removed_anchors = context
+        .anchors
         .iter()
         .filter(|&&anchor| start < anchor && anchor < end)
         .count();
-    let new_break = usize::from(!final_line && !anchor_set.contains(&end));
+    let new_break =
+        usize::from(!final_line && !context.anchor_set.contains(&end));
     let displacement = if new_break == 0 {
         0
     } else {
-        nearest_anchor(end, anchors)
+        nearest_anchor(end, context.anchors)
     };
 
     LayoutCost {
-        overflow: length.saturating_sub(args.wraplen),
-        underflow: if final_line {
+        overflow: length.saturating_sub(context.args.wraplen),
+        underflow: if final_line
+            || length >= context.args.wrapmin
+            || reaches_target_with_next_chunk
+        {
             0
         } else {
-            args.wrapmin.saturating_sub(length)
+            context.args.wrapmin.saturating_sub(length)
         },
         changed_breaks: removed_anchors + new_break,
         displacement,
         raggedness: if final_line {
             0
         } else {
-            args.wraplen.abs_diff(length)
+            context.args.wrapmin.abs_diff(length)
         },
         lines: 1,
     }
@@ -266,6 +281,12 @@ fn minimally_reflow(lines: &[String], args: &Args) -> String {
 
     let breaks = legal_breaks(&text, &anchors, args);
     let anchor_set: HashSet<usize> = anchors.iter().copied().collect();
+    let context = LayoutContext {
+        text: &text,
+        anchors: &anchors,
+        anchor_set: &anchor_set,
+        args,
+    };
     let first_indent = lines.first().map_or(0, |line| indent_width(line, args));
     let continuation_indent = lines
         .get(1)
@@ -286,13 +307,11 @@ fn minimally_reflow(lines: &[String], args: &Args) -> String {
         let mut saw_acceptable_break = false;
         for end_index in start_index + 1..breaks.len() {
             let segment_cost = transition_cost(
-                &text,
+                &context,
                 breaks[start_index],
                 breaks[end_index],
+                breaks.get(end_index + 1).copied(),
                 indent,
-                &anchors,
-                &anchor_set,
-                args,
             );
             if segment_cost.overflow == 0 {
                 saw_acceptable_break = true;

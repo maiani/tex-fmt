@@ -27,7 +27,7 @@ pub struct Args {
     pub wrap: bool,
     /// Maximum allowed line length
     pub wraplen: usize,
-    /// Wrap lines longer than this
+    /// Target length used when choosing wrap points
     pub wrapmin: usize,
     /// Paragraph reflow strategy
     pub reflow: ReflowMode,

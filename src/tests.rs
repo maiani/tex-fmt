@@ -9,6 +9,35 @@ use similar::{ChangeTag, TextDiff};
 use std::fs;
 use std::path::PathBuf;
 
+#[test]
+fn minimal_reflow_preserves_a_higher_target_layout() {
+    let source = "Spin textures are ubiquitous in antiferromagnets, yet their consequences for altermagnets remain largely unexplored. We show that smooth spatial variations of the N\\'eel order act on itinerant electrons as emergent gauge fields, producing strong, tunable in-plane anisotropies in transport and optical absorption.\n";
+    let file = PathBuf::from("input.tex");
+    let mut canonical_args = Args::default();
+    canonical_args.wraplen = 100;
+    canonical_args.wrapmin = 90;
+    canonical_args.reflow = ReflowMode::Canonical;
+    let canonical =
+        format_file(source, &file, &canonical_args, &mut Vec::new());
+
+    // Canonical wrapping stops before the first chunk which reaches its target,
+    // so a stable line may itself be shorter than that target.
+    assert!(canonical
+        .lines()
+        .take(canonical.lines().count().saturating_sub(1))
+        .any(|line| line.chars().count() < 85));
+
+    for wrapmin in [90, 85] {
+        let mut minimal_args = Args::default();
+        minimal_args.wraplen = 100;
+        minimal_args.wrapmin = wrapmin;
+        minimal_args.reflow = ReflowMode::Minimal;
+        let minimally_reflowed =
+            format_file(&canonical, &file, &minimal_args, &mut Vec::new());
+        assert_eq!(minimally_reflowed, canonical);
+    }
+}
+
 fn test_file(
     source_file: &PathBuf,
     target_file: &PathBuf,

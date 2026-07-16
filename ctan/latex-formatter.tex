@@ -177,12 +177,14 @@ becomes
 
 \subsection{Paragraph reflow}
 
-Paragraph reflow is disabled by default. With
-\texttt{--reflow minimal}, existing line breaks are kept whenever their lines
-are between \texttt{wrapmin} and \texttt{wraplen}, unless moving a nearby
-break is required to satisfy those limits. Text is redistributed across the
-smallest feasible surrounding region when a line falls outside the range,
-which keeps version-control diffs small after prose edits.
+Paragraph reflow is disabled by default. \texttt{wraplen} is the hard
+line-length limit, while \texttt{wrapmin} is the target used when choosing a
+break rather than a strict minimum. With \texttt{--reflow minimal}, an existing
+break is stable when its line has reached \texttt{wrapmin}, or when pulling the
+next legal text chunk would reach or cross that target. Text is redistributed
+only around boundaries which have not reached this equilibrium or whose lines
+exceed \texttt{wraplen}, which keeps version-control diffs small after prose
+edits.
 
 With \texttt{--reflow canonical}, eligible paragraph line breaks are removed
 before wrapping, producing a consistent layout without preferring the input
@@ -329,7 +331,7 @@ The first example in each row is the default value.
       \texttt{wraplen}        & int      & \texttt{80}, \texttt{100}
       & Line length for wrapping \\
       \texttt{wrapmin}        & int      & \texttt{70}, \texttt{90}
-      & Target minimum length for line wrapping \\
+      & Soft target for line breaks \\
       \texttt{reflow}         & str      & \texttt{"off"},
       \texttt{"minimal"} & Paragraph reflow strategy; \\
                             & & & also accepts \texttt{"canonical"} \\

@@ -247,12 +247,13 @@ becomes:
 
 ### Paragraph reflow
 
-Paragraph reflow is disabled by default. `--reflow minimal` keeps existing line
-breaks whenever their lines are between `wrapmin` and `wraplen`, unless moving
-a nearby break is required to satisfy those limits. It redistributes text
-across the smallest feasible surrounding region when a line falls outside the
-range. This mode is intended to keep version-control diffs small after prose
-edits.
+Paragraph reflow is disabled by default. `wraplen` is the hard line-length
+limit, while `wrapmin` is the target used when choosing a break rather than a
+strict minimum. With `--reflow minimal`, an existing break is stable when its
+line has reached `wrapmin`, or when pulling the next legal text chunk would
+reach or cross that target. Text is redistributed only around boundaries which
+have not reached this equilibrium or whose lines exceed `wraplen`. This mode is
+intended to keep version-control diffs small after prose edits.
 
 `--reflow canonical` removes eligible line breaks before wrapping, producing a
 consistent paragraph layout without preferring the input boundaries. Neither
@@ -427,7 +428,7 @@ The first example in each row is the default value.
 | `fail-on-change` | bool     | `false`                | Fail if files are modified |
 | `wrap`           | bool     | `true`                 | Wrap long lines |
 | `wraplen`        | int      | `80`, `100`            | Line length for wrapping |
-| `wrapmin`        | int      | `70`, `90`             | Target minimum length for line wrapping |
+| `wrapmin`        | int      | `70`, `90`             | Soft target for line breaks |
 | `reflow`         | str      | `"off"`, `"minimal"`  | Paragraph reflow strategy; also accepts `"canonical"` |
 | `format-options` | bool     | `false`                | Put each item in multiline optional arguments on its own line |
 | `tabsize`        | int      | `2`, `4`               | Number of characters to use as tab size |
