@@ -1,4 +1,5 @@
 - New `--join` option to join short lines within paragraphs before wrapping, reflowing paragraph text to the target line length.
+- New `--format-options` option to put each item in multiline optional arguments on its own line.
 
 
 # v0.5.7

@@ -71,6 +71,7 @@ pub fn get_cli_args(matches: Option<ArgMatches>) -> OptionArgs {
         wraplen: arg_matches.get_one::<usize>("wraplen").copied(),
         wrapmin: None,
         join: get_flag(&arg_matches, "join"),
+        format_options: get_flag(&arg_matches, "format-options"),
         tabsize: arg_matches.get_one::<u8>("tabsize").copied(),
         tabchar,
         stdin: get_flag(&arg_matches, "stdin"),

@@ -153,6 +153,9 @@ pub fn get_config_args(
             .get("wrapmin")
             .map(|x| x.as_integer().unwrap().try_into().unwrap()),
         join: config.get("join").map(|x| x.as_bool().unwrap()),
+        format_options: config
+            .get("format-options")
+            .map(|x| x.as_bool().unwrap()),
         tabsize: config
             .get("tabsize")
             .map(|x| x.as_integer().unwrap().try_into().unwrap()),

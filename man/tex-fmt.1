@@ -1,10 +1,10 @@
 .ie \n(.g .ds Aq \(aq
 .el .ds Aq '
-.TH tex-fmt 1  "tex-fmt 0.5.7" 
+.TH tex-fmt 1  "tex-fmt 0.5.7"
 .SH NAME
 tex\-fmt \- LaTeX formatter written in Rust
 .SH SYNOPSIS
-\fBtex\-fmt\fR [\fB\-c\fR|\fB\-\-check\fR] [\fB\-p\fR|\fB\-\-print\fR] [\fB\-f\fR|\fB\-\-fail\-on\-change\fR] [\fB\-n\fR|\fB\-\-nowrap\fR] [\fB\-j\fR|\fB\-\-join\fR] [\fB\-l\fR|\fB\-\-wraplen\fR] [\fB\-t\fR|\fB\-\-tabsize\fR] [\fB\-\-usetabs\fR] [\fB\-s\fR|\fB\-\-stdin\fR] [\fB\-\-config\fR] [\fB\-\-noconfig\fR] [\fB\-v\fR|\fB\-\-verbose\fR] [\fB\-q\fR|\fB\-\-quiet\fR] [\fB\-\-trace\fR] [\fB\-\-completion\fR] [\fB\-\-man\fR] [\fB\-\-args\fR] [\fB\-r\fR|\fB\-\-recursive\fR] [\fB\-\-format\-tables\fR] [\fB\-h\fR|\fB\-\-help\fR] [\fB\-V\fR|\fB\-\-version\fR] [\fIfiles\fR] 
+\fBtex\-fmt\fR [\fB\-c\fR|\fB\-\-check\fR] [\fB\-p\fR|\fB\-\-print\fR] [\fB\-f\fR|\fB\-\-fail\-on\-change\fR] [\fB\-n\fR|\fB\-\-nowrap\fR] [\fB\-j\fR|\fB\-\-join\fR] [\fB\-\-format\-options\fR] [\fB\-l\fR|\fB\-\-wraplen\fR] [\fB\-t\fR|\fB\-\-tabsize\fR] [\fB\-\-usetabs\fR] [\fB\-s\fR|\fB\-\-stdin\fR] [\fB\-\-config\fR] [\fB\-\-noconfig\fR] [\fB\-v\fR|\fB\-\-verbose\fR] [\fB\-q\fR|\fB\-\-quiet\fR] [\fB\-\-trace\fR] [\fB\-\-completion\fR] [\fB\-\-man\fR] [\fB\-\-args\fR] [\fB\-r\fR|\fB\-\-recursive\fR] [\fB\-\-format\-tables\fR] [\fB\-h\fR|\fB\-\-help\fR] [\fB\-V\fR|\fB\-\-version\fR] [\fIfiles\fR]
 .SH DESCRIPTION
 LaTeX formatter written in Rust
 .SH OPTIONS
@@ -23,6 +23,9 @@ Do not wrap long lines
 .TP
 \fB\-j\fR, \fB\-\-join\fR
 Join short lines within paragraphs before wrapping
+.TP
+\fB\-\-format\-options\fR
+Put each item in multiline optional arguments on its own line
 .TP
 \fB\-l\fR, \fB\-\-wraplen\fR \fI<N>\fR
 Line length for wrapping [default: 80]

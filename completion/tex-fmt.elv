@@ -34,6 +34,7 @@ set edit:completion:arg-completer[tex-fmt] = {|@words|
             cand --nowrap 'Do not wrap long lines'
             cand -j 'Join short lines within paragraphs before wrapping'
             cand --join 'Join short lines within paragraphs before wrapping'
+            cand --format-options 'Put each item in multiline optional arguments on its own line'
             cand --usetabs 'Use tabs instead of spaces for indentation'
             cand -s 'Process stdin as a single file, output to stdout'
             cand --stdin 'Process stdin as a single file, output to stdout'

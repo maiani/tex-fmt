@@ -31,6 +31,8 @@ pub struct Args {
     pub wrapmin: usize,
     /// Join short lines within paragraphs before wrapping
     pub join: bool,
+    /// Put each item in multiline optional arguments on its own line
+    pub format_options: bool,
     /// Number of characters to use as tab size
     pub tabsize: u8,
     /// Characters to use for indentation
@@ -77,6 +79,8 @@ pub struct OptionArgs {
     pub wrapmin: Option<usize>,
     #[merge(strategy= merge::option::overwrite_none)]
     pub join: Option<bool>,
+    #[merge(strategy= merge::option::overwrite_none)]
+    pub format_options: Option<bool>,
     #[merge(strategy= merge::option::overwrite_none)]
     pub tabsize: Option<u8>,
     #[merge(strategy= merge::option::overwrite_none)]
@@ -160,6 +164,7 @@ impl Default for OptionArgs {
             wraplen: Some(80),
             wrapmin: None,
             join: Some(false),
+            format_options: Some(false),
             tabsize: Some(2),
             tabchar: Some(TabChar::Space),
             stdin: Some(false),
@@ -189,6 +194,7 @@ impl OptionArgs {
             wraplen: None,
             wrapmin: None,
             join: None,
+            format_options: None,
             tabsize: None,
             tabchar: None,
             stdin: None,
@@ -254,6 +260,7 @@ impl Args {
             wraplen: args.wraplen.unwrap(),
             wrapmin,
             join: args.join.unwrap(),
+            format_options: args.format_options.unwrap(),
             tabsize: args.tabsize.unwrap(),
             tabchar: args.tabchar.unwrap(),
             stdin: args.stdin.unwrap(),
@@ -415,6 +422,11 @@ impl fmt::Display for Args {
         display_arg_line(f, "wraplen", &self.wraplen.to_string())?;
         display_arg_line(f, "wrapmin", &self.wrapmin.to_string())?;
         display_arg_line(f, "join", &self.join.to_string())?;
+        display_arg_line(
+            f,
+            "format-options",
+            &self.format_options.to_string(),
+        )?;
         display_arg_line(f, "tabsize", &self.tabsize.to_string())?;
         display_arg_line(f, "tabchar", &self.tabchar.to_string())?;
         display_arg_line(f, "stdin", &self.stdin.to_string())?;

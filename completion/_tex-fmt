@@ -31,6 +31,7 @@ _tex-fmt() {
 '--nowrap[Do not wrap long lines]' \
 '-j[Join short lines within paragraphs before wrapping]' \
 '--join[Join short lines within paragraphs before wrapping]' \
+'--format-options[Put each item in multiline optional arguments on its own line]' \
 '--usetabs[Use tabs instead of spaces for indentation]' \
 '-s[Process stdin as a single file, output to stdout]' \
 '--stdin[Process stdin as a single file, output to stdout]' \

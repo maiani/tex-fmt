@@ -1,0 +1,40 @@
+\documentclass[
+  a4paper,
+  11pt,
+  twoside,
+  onecolumn
+]{article}
+
+\usepackage[
+  draft,
+  colorlinks
+]{hyperref}
+
+\newcommand{\example}[short]{value}
+
+\example[
+  key={a,b},
+  nested=[x,y],
+  final
+]
+
+\example[
+  first,
+  second,
+]
+
+\example[title={A title which
+spans lines}, color=blue]
+
+\example[first, % retain this comment
+second]
+
+% tex-fmt: off
+\example[first,
+second]
+% tex-fmt: on
+
+\begin{verbatim}
+\example[first,
+second]
+\end{verbatim}

@@ -47,6 +47,12 @@ pub fn get_cli_command() -> Command {
                 .help("Join short lines within paragraphs before wrapping"),
         )
         .arg(
+            Arg::new("format-options")
+                .long("format-options")
+                .action(SetTrue)
+                .help("Put each item in multiline optional arguments on its own line"),
+        )
+        .arg(
             Arg::new("wraplen")
                 .short('l')
                 .long("wraplen")

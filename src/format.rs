@@ -5,6 +5,7 @@ use crate::ignore::{get_ignore, Ignore};
 use crate::indent::{apply_indent, calculate_indent, Indent};
 use crate::join::join_lines;
 use crate::logging::{record_file_log, Log};
+use crate::options::format_options;
 use crate::read::{read, read_stdin};
 use crate::regexes::{ENV_BEGIN, ENV_END, ITEM, RE_SPLITTING, VERBS};
 use crate::subs;
@@ -46,6 +47,18 @@ pub fn format_file(
     if args.join {
         old_text =
             join_lines(&old_text, file, logs, &verbatims_begin, &verbatims_end);
+    }
+
+    // Put each item in multiline optional arguments on its own line
+    if args.format_options {
+        old_text = format_options(
+            &old_text,
+            file,
+            args,
+            logs,
+            &verbatims_begin,
+            &verbatims_end,
+        );
     }
 
     // Zip the source lines with line numbers

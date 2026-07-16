@@ -14,6 +14,7 @@ pub mod ignore;
 pub mod indent;
 pub mod join;
 pub mod logging;
+pub mod options;
 pub mod read;
 pub mod regexes;
 pub mod search;
