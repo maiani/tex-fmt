@@ -1,4 +1,4 @@
-- New `--join` option to join short lines within paragraphs before wrapping, reflowing paragraph text to the target line length.
+- New `--reflow <MODE>` option with `minimal` and `canonical` paragraph reflow strategies. Minimal reflow preserves acceptable existing line breaks to reduce diffs, while canonical reflow rebuilds each eligible paragraph to the target line length.
 - New `--format-options` option to put each item in multiline optional arguments on its own line.
 
 

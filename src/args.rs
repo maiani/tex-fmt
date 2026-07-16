@@ -29,8 +29,8 @@ pub struct Args {
     pub wraplen: usize,
     /// Wrap lines longer than this
     pub wrapmin: usize,
-    /// Join short lines within paragraphs before wrapping
-    pub join: bool,
+    /// Paragraph reflow strategy
+    pub reflow: ReflowMode,
     /// Put each item in multiline optional arguments on its own line
     pub format_options: bool,
     /// Number of characters to use as tab size
@@ -78,7 +78,7 @@ pub struct OptionArgs {
     #[merge(strategy= merge::option::overwrite_none)]
     pub wrapmin: Option<usize>,
     #[merge(strategy= merge::option::overwrite_none)]
-    pub join: Option<bool>,
+    pub reflow: Option<ReflowMode>,
     #[merge(strategy= merge::option::overwrite_none)]
     pub format_options: Option<bool>,
     #[merge(strategy= merge::option::overwrite_none)]
@@ -125,6 +125,28 @@ pub enum TabChar {
     Space,
 }
 
+/// Strategy used to redistribute text across paragraph lines.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum ReflowMode {
+    /// Preserve existing line breaks, apart from ordinary wrapping.
+    #[default]
+    Off,
+    /// Preserve acceptable breaks and rebalance the smallest possible region.
+    Minimal,
+    /// Discard eligible paragraph breaks and wrap from the beginning.
+    Canonical,
+}
+
+impl fmt::Display for ReflowMode {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Self::Off => write!(f, "off"),
+            Self::Minimal => write!(f, "minimal"),
+            Self::Canonical => write!(f, "canonical"),
+        }
+    }
+}
+
 impl fmt::Display for TabChar {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
@@ -163,7 +185,7 @@ impl Default for OptionArgs {
             wrap: Some(true),
             wraplen: Some(80),
             wrapmin: None,
-            join: Some(false),
+            reflow: Some(ReflowMode::Off),
             format_options: Some(false),
             tabsize: Some(2),
             tabchar: Some(TabChar::Space),
@@ -193,7 +215,7 @@ impl OptionArgs {
             wrap: None,
             wraplen: None,
             wrapmin: None,
-            join: None,
+            reflow: None,
             format_options: None,
             tabsize: None,
             tabchar: None,
@@ -259,7 +281,7 @@ impl Args {
             wrap: args.wrap.unwrap(),
             wraplen: args.wraplen.unwrap(),
             wrapmin,
-            join: args.join.unwrap(),
+            reflow: args.reflow.unwrap(),
             format_options: args.format_options.unwrap(),
             tabsize: args.tabsize.unwrap(),
             tabchar: args.tabchar.unwrap(),
@@ -285,13 +307,13 @@ impl Args {
         // stdin implies print
         self.print |= self.stdin;
 
-        // Joining lines without wrapping produces very long lines
-        if self.join && !self.wrap {
+        // Paragraph reflow is a wrapping strategy.
+        if self.reflow != ReflowMode::Off && !self.wrap {
             record_file_log(
                 logs,
                 Level::Warn,
                 &empty_path,
-                "Joining lines without wrapping may create very long lines.",
+                "Paragraph reflow is disabled when wrapping is disabled.",
             );
         }
 
@@ -421,7 +443,7 @@ impl fmt::Display for Args {
         display_arg_line(f, "wrap", &self.wrap.to_string())?;
         display_arg_line(f, "wraplen", &self.wraplen.to_string())?;
         display_arg_line(f, "wrapmin", &self.wrapmin.to_string())?;
-        display_arg_line(f, "join", &self.join.to_string())?;
+        display_arg_line(f, "reflow", &self.reflow.to_string())?;
         display_arg_line(
             f,
             "format-options",

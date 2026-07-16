@@ -23,12 +23,16 @@ _tex-fmt() {
 
     case "${cmd}" in
         tex__fmt)
-            opts="-c -p -f -n -j -l -t -s -v -q -r -h -V --check --print --fail-on-change --nowrap --join --format-options --wraplen --tabsize --usetabs --stdin --config --noconfig --verbose --quiet --trace --completion --man --args --recursive --format-tables --help --version [files]..."
+            opts="-c -p -f -n -l -t -s -v -q -r -h -V --check --print --fail-on-change --nowrap --reflow --format-options --wraplen --tabsize --usetabs --stdin --config --noconfig --verbose --quiet --trace --completion --man --args --recursive --format-tables --help --version [files]..."
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 1 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
             fi
             case "${prev}" in
+                --reflow)
+                    COMPREPLY=($(compgen -W "off minimal canonical" -- "${cur}"))
+                    return 0
+                    ;;
                 --wraplen)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0

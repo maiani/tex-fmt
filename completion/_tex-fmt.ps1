@@ -21,6 +21,7 @@ Register-ArgumentCompleter -Native -CommandName 'tex-fmt' -ScriptBlock {
 
     $completions = @(switch ($command) {
         'tex-fmt' {
+            [CompletionResult]::new('--reflow', '--reflow', [CompletionResultType]::ParameterName, 'Paragraph reflow strategy')
             [CompletionResult]::new('-l', '-l', [CompletionResultType]::ParameterName, 'Line length for wrapping [default: 80]')
             [CompletionResult]::new('--wraplen', '--wraplen', [CompletionResultType]::ParameterName, 'Line length for wrapping [default: 80]')
             [CompletionResult]::new('-t', '-t', [CompletionResultType]::ParameterName, 'Number of characters to use as tab size [default: 2]')
@@ -35,8 +36,6 @@ Register-ArgumentCompleter -Native -CommandName 'tex-fmt' -ScriptBlock {
             [CompletionResult]::new('--fail-on-change', '--fail-on-change', [CompletionResultType]::ParameterName, 'Format files and return non-zero exit code if files are modified')
             [CompletionResult]::new('-n', '-n', [CompletionResultType]::ParameterName, 'Do not wrap long lines')
             [CompletionResult]::new('--nowrap', '--nowrap', [CompletionResultType]::ParameterName, 'Do not wrap long lines')
-            [CompletionResult]::new('-j', '-j', [CompletionResultType]::ParameterName, 'Join short lines within paragraphs before wrapping')
-            [CompletionResult]::new('--join', '--join', [CompletionResultType]::ParameterName, 'Join short lines within paragraphs before wrapping')
             [CompletionResult]::new('--format-options', '--format-options', [CompletionResultType]::ParameterName, 'Put each item in multiline optional arguments on its own line')
             [CompletionResult]::new('--usetabs', '--usetabs', [CompletionResultType]::ParameterName, 'Use tabs instead of spaces for indentation')
             [CompletionResult]::new('-s', '-s', [CompletionResultType]::ParameterName, 'Process stdin as a single file, output to stdout')

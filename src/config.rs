@@ -1,6 +1,6 @@
 //! Read arguments from a config file
 
-use crate::args::{OptionArgs, TabChar};
+use crate::args::{OptionArgs, ReflowMode, TabChar};
 use dirs::config_dir;
 use log::LevelFilter;
 use std::env::current_dir;
@@ -133,6 +133,13 @@ pub fn get_config_args(
         _ => None,
     };
 
+    let reflow = match config.get("reflow").map(|x| x.as_str().unwrap()) {
+        Some("off") => Some(ReflowMode::Off),
+        Some("minimal") => Some(ReflowMode::Minimal),
+        Some("canonical") => Some(ReflowMode::Canonical),
+        _ => None,
+    };
+
     // Read wrap_chars to Vec<char> not Vec<String>
     let wrap_chars: Vec<char> = parse_array_string("wrap-chars", &config)
         .iter()
@@ -152,7 +159,7 @@ pub fn get_config_args(
         wrapmin: config
             .get("wrapmin")
             .map(|x| x.as_integer().unwrap().try_into().unwrap()),
-        join: config.get("join").map(|x| x.as_bool().unwrap()),
+        reflow,
         format_options: config
             .get("format-options")
             .map(|x| x.as_bool().unwrap()),

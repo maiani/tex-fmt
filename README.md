@@ -190,7 +190,7 @@ tex-fmt --recursive                # recursively format files in current directo
 tex-fmt --recursive dir/           # recursively format files in dir
 tex-fmt --fail-on-change file.tex  # format file.tex and return exit-code 1 if overwritten
 tex-fmt --nowrap file.tex          # do not wrap long lines
-tex-fmt --join file.tex            # join short lines within paragraphs before wrapping
+tex-fmt --reflow minimal file.tex  # reflow paragraphs with minimal line changes
 tex-fmt --format-options file.tex  # format multiline optional arguments
 tex-fmt --format-tables file.tex   # format tables (align ampersands)
 tex-fmt --stdin                    # read from stdin and print to stdout
@@ -220,6 +220,44 @@ To ignore all config files, use the `--noconfig` flag.
 Note for contributors: this repository's configuration file will be
 automatically applied if tex-fmt is run from within the repository.
 Use `--noconfig` or `--config <PATH>` to avoid this.
+
+### Multiline optional arguments
+
+`--format-options` puts each top-level comma-separated item in an already
+multiline command option on its own indented line. Single-line options remain
+compact, and nested braces or brackets remain part of their surrounding item.
+Options containing comments or items which themselves span lines are left
+unchanged because rewriting them could alter meaningful whitespace.
+
+For example:
+
+```tex
+\usepackage[draft,
+colorlinks]{hyperref}
+```
+
+becomes:
+
+```tex
+\usepackage[
+  draft,
+  colorlinks
+]{hyperref}
+```
+
+### Paragraph reflow
+
+Paragraph reflow is disabled by default. `--reflow minimal` keeps existing line
+breaks whenever their lines are between `wrapmin` and `wraplen`, unless moving
+a nearby break is required to satisfy those limits. It redistributes text
+across the smallest feasible surrounding region when a line falls outside the
+range. This mode is intended to keep version-control diffs small after prose
+edits.
+
+`--reflow canonical` removes eligible line breaks before wrapping, producing a
+consistent paragraph layout without preferring the input boundaries. Neither
+mode reflows comments, displayed mathematics, tables, verbatim content, or
+other protected regions. Reflow is disabled when wrapping is disabled.
 
 ### Disabling the formatter
 
@@ -360,7 +398,7 @@ The following arguments can be passed on the command line.
 | `--recursive`          | `-r`  |         | Recursively search for files to format |
 | `--nowrap`             | `-n`  |         | Do not wrap long lines |
 | `--wraplen <N>`        | `-l`  | `80`    | Line length for wrapping |
-| `--join`               | `-j`  |         | Join short lines within paragraphs before wrapping |
+| `--reflow <MODE>`      |       | `off`   | Paragraph reflow strategy: `off`, `minimal`, or `canonical` |
 | `--format-options`     |       |         | Put each item in multiline optional arguments on its own line |
 | `--tabsize <N>`        | `-t`  | `2`     | Number of characters to use as tab size |
 | `--usetabs`            |       |         | Use tabs instead of spaces for indentation |
@@ -390,7 +428,7 @@ The first example in each row is the default value.
 | `wrap`           | bool     | `true`                 | Wrap long lines |
 | `wraplen`        | int      | `80`, `100`            | Line length for wrapping |
 | `wrapmin`        | int      | `70`, `90`             | Target minimum length for line wrapping |
-| `join`           | bool     | `false`                | Join short lines within paragraphs before wrapping |
+| `reflow`         | str      | `"off"`, `"minimal"`  | Paragraph reflow strategy; also accepts `"canonical"` |
 | `format-options` | bool     | `false`                | Put each item in multiline optional arguments on its own line |
 | `tabsize`        | int      | `2`, `4`               | Number of characters to use as tab size |
 | `tabchar`        | str      | `"space"`, `"tab"`     | Character to use for indentation |

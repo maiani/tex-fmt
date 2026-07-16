@@ -4,7 +4,7 @@
 .SH NAME
 tex\-fmt \- LaTeX formatter written in Rust
 .SH SYNOPSIS
-\fBtex\-fmt\fR [\fB\-c\fR|\fB\-\-check\fR] [\fB\-p\fR|\fB\-\-print\fR] [\fB\-f\fR|\fB\-\-fail\-on\-change\fR] [\fB\-n\fR|\fB\-\-nowrap\fR] [\fB\-j\fR|\fB\-\-join\fR] [\fB\-\-format\-options\fR] [\fB\-l\fR|\fB\-\-wraplen\fR] [\fB\-t\fR|\fB\-\-tabsize\fR] [\fB\-\-usetabs\fR] [\fB\-s\fR|\fB\-\-stdin\fR] [\fB\-\-config\fR] [\fB\-\-noconfig\fR] [\fB\-v\fR|\fB\-\-verbose\fR] [\fB\-q\fR|\fB\-\-quiet\fR] [\fB\-\-trace\fR] [\fB\-\-completion\fR] [\fB\-\-man\fR] [\fB\-\-args\fR] [\fB\-r\fR|\fB\-\-recursive\fR] [\fB\-\-format\-tables\fR] [\fB\-h\fR|\fB\-\-help\fR] [\fB\-V\fR|\fB\-\-version\fR] [\fIfiles\fR]
+\fBtex\-fmt\fR [\fB\-c\fR|\fB\-\-check\fR] [\fB\-p\fR|\fB\-\-print\fR] [\fB\-f\fR|\fB\-\-fail\-on\-change\fR] [\fB\-n\fR|\fB\-\-nowrap\fR] [\fB\-\-reflow\fR] [\fB\-\-format\-options\fR] [\fB\-l\fR|\fB\-\-wraplen\fR] [\fB\-t\fR|\fB\-\-tabsize\fR] [\fB\-\-usetabs\fR] [\fB\-s\fR|\fB\-\-stdin\fR] [\fB\-\-config\fR] [\fB\-\-noconfig\fR] [\fB\-v\fR|\fB\-\-verbose\fR] [\fB\-q\fR|\fB\-\-quiet\fR] [\fB\-\-trace\fR] [\fB\-\-completion\fR] [\fB\-\-man\fR] [\fB\-\-args\fR] [\fB\-r\fR|\fB\-\-recursive\fR] [\fB\-\-format\-tables\fR] [\fB\-h\fR|\fB\-\-help\fR] [\fB\-V\fR|\fB\-\-version\fR] [\fIfiles\fR]
 .SH DESCRIPTION
 LaTeX formatter written in Rust
 .SH OPTIONS
@@ -21,8 +21,20 @@ Format files and return non\-zero exit code if files are modified
 \fB\-n\fR, \fB\-\-nowrap\fR
 Do not wrap long lines
 .TP
-\fB\-j\fR, \fB\-\-join\fR
-Join short lines within paragraphs before wrapping
+\fB\-\-reflow\fR \fI<MODE>\fR
+Paragraph reflow strategy
+.br
+
+.br
+\fIPossible values:\fR
+.RS 14
+.IP \(bu 2
+off
+.IP \(bu 2
+minimal
+.IP \(bu 2
+canonical
+.RE
 .TP
 \fB\-\-format\-options\fR
 Put each item in multiline optional arguments on its own line

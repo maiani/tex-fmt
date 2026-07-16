@@ -1,6 +1,6 @@
 //! Functionality to parse CLI arguments
 
-use crate::args::{OptionArgs, TabChar};
+use crate::args::{OptionArgs, ReflowMode, TabChar};
 use clap::ArgMatches;
 use clap_complete::{generate, Shell};
 use clap_mangen::Man;
@@ -63,6 +63,13 @@ pub fn get_cli_args(matches: Option<ArgMatches>) -> OptionArgs {
     } else {
         None
     };
+    let reflow =
+        match arg_matches.get_one::<String>("reflow").map(String::as_str) {
+            Some("off") => Some(ReflowMode::Off),
+            Some("minimal") => Some(ReflowMode::Minimal),
+            Some("canonical") => Some(ReflowMode::Canonical),
+            _ => None,
+        };
     let args = OptionArgs {
         check: get_flag(&arg_matches, "check"),
         print: get_flag(&arg_matches, "print"),
@@ -70,7 +77,7 @@ pub fn get_cli_args(matches: Option<ArgMatches>) -> OptionArgs {
         wrap,
         wraplen: arg_matches.get_one::<usize>("wraplen").copied(),
         wrapmin: None,
-        join: get_flag(&arg_matches, "join"),
+        reflow,
         format_options: get_flag(&arg_matches, "format-options"),
         tabsize: arg_matches.get_one::<u8>("tabsize").copied(),
         tabchar,

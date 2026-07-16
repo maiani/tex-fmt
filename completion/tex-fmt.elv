@@ -18,6 +18,7 @@ set edit:completion:arg-completer[tex-fmt] = {|@words|
     }
     var completions = [
         &'tex-fmt'= {
+            cand --reflow 'Paragraph reflow strategy'
             cand -l 'Line length for wrapping [default: 80]'
             cand --wraplen 'Line length for wrapping [default: 80]'
             cand -t 'Number of characters to use as tab size [default: 2]'
@@ -32,8 +33,6 @@ set edit:completion:arg-completer[tex-fmt] = {|@words|
             cand --fail-on-change 'Format files and return non-zero exit code if files are modified'
             cand -n 'Do not wrap long lines'
             cand --nowrap 'Do not wrap long lines'
-            cand -j 'Join short lines within paragraphs before wrapping'
-            cand --join 'Join short lines within paragraphs before wrapping'
             cand --format-options 'Put each item in multiline optional arguments on its own line'
             cand --usetabs 'Use tabs instead of spaces for indentation'
             cand -s 'Process stdin as a single file, output to stdout'

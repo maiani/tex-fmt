@@ -1,12 +1,12 @@
 //! Core methodology for formatting a file
 
-use crate::args::{Args, TabChar};
+use crate::args::{Args, ReflowMode, TabChar};
 use crate::ignore::{get_ignore, Ignore};
 use crate::indent::{apply_indent, calculate_indent, Indent};
-use crate::join::join_lines;
 use crate::logging::{record_file_log, Log};
 use crate::options::format_options;
 use crate::read::{read, read_stdin};
+use crate::reflow::reflow_lines;
 use crate::regexes::{ENV_BEGIN, ENV_END, ITEM, RE_SPLITTING, VERBS};
 use crate::subs;
 use crate::table::{format_tables, is_inside_table, Table};
@@ -43,10 +43,16 @@ pub fn format_file(
     // Clean the source file
     let mut old_text = clean_text(old_text, args);
 
-    // Join short lines within paragraphs
-    if args.join {
-        old_text =
-            join_lines(&old_text, file, logs, &verbatims_begin, &verbatims_end);
+    // Redistribute text across eligible paragraph lines.
+    if args.wrap && args.reflow != ReflowMode::Off {
+        old_text = reflow_lines(
+            &old_text,
+            file,
+            args,
+            logs,
+            &verbatims_begin,
+            &verbatims_end,
+        );
     }
 
     // Put each item in multiline optional arguments on its own line

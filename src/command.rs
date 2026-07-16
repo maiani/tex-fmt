@@ -40,11 +40,11 @@ pub fn get_cli_command() -> Command {
                 .help("Do not wrap long lines"),
         )
         .arg(
-            Arg::new("join")
-                .short('j')
-                .long("join")
-                .action(SetTrue)
-                .help("Join short lines within paragraphs before wrapping"),
+            Arg::new("reflow")
+                .long("reflow")
+                .value_name("MODE")
+                .value_parser(["off", "minimal", "canonical"])
+                .help("Paragraph reflow strategy"),
         )
         .arg(
             Arg::new("format-options")

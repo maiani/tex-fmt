@@ -97,6 +97,8 @@ tex-fmt --recursive dir/           # recursively format files in dir
 tex-fmt --fail-on-change file.tex  # format file.tex and return exit-code 1
                                    # if overwritten
 tex-fmt --nowrap file.tex          # do not wrap long lines
+tex-fmt --reflow minimal file.tex  # reflow with minimal line changes
+tex-fmt --format-options file.tex  # format multiline optional arguments
 tex-fmt --format-tables file.tex   # format tables (align ampersands)
 tex-fmt --stdin                    # read from stdin and print to stdout
 tex-fmt --help                     # view help information
@@ -138,6 +140,8 @@ check = false
 print = false
 wrap = true
 wraplen = 80
+reflow = "off"
+format-options = false
 tabsize = 2
 tabchar = "space"
 stdin = false
@@ -145,6 +149,46 @@ verbosity = "warn"
 lists = []
 no-indent-envs = []
 \end{verbatim}
+
+\subsection{Multiline optional arguments}
+
+With \texttt{--format-options}, each top-level comma-separated item in an
+already multiline command option is put on its own indented line. Single-line
+options remain compact, and nested braces or brackets remain part of their
+surrounding item. Options containing comments or items which themselves span
+lines are left unchanged because rewriting them could alter meaningful
+whitespace.
+
+For example,
+
+\begin{verbatim}
+\usepackage[draft,
+colorlinks]{hyperref}
+\end{verbatim}
+
+becomes
+
+\begin{verbatim}
+\usepackage[
+  draft,
+  colorlinks
+]{hyperref}
+\end{verbatim}
+
+\subsection{Paragraph reflow}
+
+Paragraph reflow is disabled by default. With
+\texttt{--reflow minimal}, existing line breaks are kept whenever their lines
+are between \texttt{wrapmin} and \texttt{wraplen}, unless moving a nearby
+break is required to satisfy those limits. Text is redistributed across the
+smallest feasible surrounding region when a line falls outside the range,
+which keeps version-control diffs small after prose edits.
+
+With \texttt{--reflow canonical}, eligible paragraph line breaks are removed
+before wrapping, producing a consistent layout without preferring the input
+boundaries. Comments, displayed mathematics, tables, verbatim content, and
+other protected regions are not reflowed. Reflow is disabled when wrapping is
+disabled.
 
 \pagebreak
 
@@ -228,6 +272,11 @@ The following arguments can be passed on the command line.
       wrap long lines \\
       \texttt{--wraplen <N>}        & \texttt{-l}  & \texttt{80}    &
       Line length for wrapping \\
+      \texttt{--reflow <MODE>}      &       & \texttt{off}   &
+      Paragraph reflow strategy: \texttt{off}, \texttt{minimal},
+      or \texttt{canonical} \\
+      \texttt{--format-options}     &       &         & Format
+      multiline optional arguments \\
       \texttt{--tabsize <N>}        & \texttt{-t}  & \texttt{2}     &
       Number of characters to use as tab size \\
       \texttt{--usetabs}            &       &         & Use tabs
@@ -281,6 +330,11 @@ The first example in each row is the default value.
       & Line length for wrapping \\
       \texttt{wrapmin}        & int      & \texttt{70}, \texttt{90}
       & Target minimum length for line wrapping \\
+      \texttt{reflow}         & str      & \texttt{"off"},
+      \texttt{"minimal"} & Paragraph reflow strategy; \\
+                            & & & also accepts \texttt{"canonical"} \\
+      \texttt{format-options} & bool     & \texttt{false}
+      & Format multiline optional arguments \\
       \texttt{tabsize}        & int      & \texttt{2}, \texttt{4}
       & Number of characters to use as tab size \\
       \texttt{tabchar}        & str      & \texttt{"space"},
