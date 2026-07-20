@@ -1,6 +1,7 @@
 complete -c tex-fmt -l reflow -d 'Paragraph reflow strategy' -r -f -a "off\t''
 minimal\t''
-canonical\t''"
+canonical\t''
+semantic\t''"
 complete -c tex-fmt -s l -l wraplen -d 'Line length for wrapping [default: 80]' -r
 complete -c tex-fmt -s t -l tabsize -d 'Number of characters to use as tab size [default: 2]' -r
 complete -c tex-fmt -l config -d 'Path to config file' -r -F

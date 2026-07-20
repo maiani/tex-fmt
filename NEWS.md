@@ -1,4 +1,4 @@
-- New `--reflow <MODE>` option with `minimal` and `canonical` paragraph reflow strategies. Minimal reflow preserves existing breaks which have reached the `wrapmin` target, or whose next text chunk would reach it, while canonical reflow rebuilds each eligible paragraph.
+- New `--reflow <MODE>` option with `minimal`, `canonical`, and `semantic` paragraph reflow strategies. Minimal reflow preserves existing breaks which have reached the `wrapmin` target, or whose next text chunk would reach it; canonical reflow rebuilds each eligible paragraph; semantic reflow keeps existing breaks, adds a break after each sentence, and breaks any sentence still longer than `wraplen` at clause boundaries before deferring to the ordinary wrapping pass.
 - New `--format-options` option to put each item in multiline optional arguments on its own line.
 
 

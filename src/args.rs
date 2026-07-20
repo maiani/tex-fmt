@@ -135,6 +135,8 @@ pub enum ReflowMode {
     Minimal,
     /// Discard eligible paragraph breaks and wrap from the beginning.
     Canonical,
+    /// Preserve existing breaks and add a break after each sentence.
+    Semantic,
 }
 
 impl fmt::Display for ReflowMode {
@@ -143,6 +145,7 @@ impl fmt::Display for ReflowMode {
             Self::Off => write!(f, "off"),
             Self::Minimal => write!(f, "minimal"),
             Self::Canonical => write!(f, "canonical"),
+            Self::Semantic => write!(f, "semantic"),
         }
     }
 }

@@ -1,0 +1,33 @@
+\documentclass{article}
+
+\begin{document}
+
+The first sentence stays on its own line.
+The second sentence follows it.
+A short third one ends here.
+
+An abbreviation such as e.g. this one does not end a sentence.
+Neither does etc. in the middle.
+See Fig. 2 and cf. the note for details.
+The value 3.14 is a decimal.
+
+This authored line breaks mid-sentence and
+continues on the next line.
+A new sentence then begins.
+
+Inline math like $a = b. c$ is never split.
+Text after the math ends the sentence.
+
+% A full comment line. It is never touched.
+A normal sentence here.
+Another one after it.
+
+This overlong sentence, which carries several clauses,
+is far too long for one line, so it is broken at its clause boundaries,
+packing whole clauses together.
+
+A citation like \cite{smith2020, jones2021} sits well past the
+configured width limit here,
+yet the comma inside the braces must never become a line break.
+
+\end{document}

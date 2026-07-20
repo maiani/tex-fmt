@@ -256,8 +256,20 @@ have not reached this equilibrium or whose lines exceed `wraplen`. This mode is
 intended to keep version-control diffs small after prose edits.
 
 `--reflow canonical` removes eligible line breaks before wrapping, producing a
-consistent paragraph layout without preferring the input boundaries. Neither
-mode reflows comments, displayed mathematics, tables, verbatim content, or
+consistent paragraph layout without preferring the input boundaries.
+
+`--reflow semantic` keeps every existing line break and adds a new break after
+each sentence, approximating one sentence per line while leaving mid-sentence
+breaks untouched. A period is treated as a sentence end only when it is followed
+by a space and is not part of a decimal, an initial, or a common abbreviation
+(such as `e.g.`, `etc.`, `Fig.`); `!` and `?` always end a sentence. A sentence
+that is still longer than `wraplen` is broken at clause boundaries (`,`, `;`,
+`:`), packing whole clauses onto each line; punctuation inside math, braces,
+brackets, or parentheses (for example a comma in `\cite{a, b}`) is never used as
+a break. Any clause that is still too long is wrapped at word boundaries by the
+ordinary wrapping pass.
+
+No mode reflows comments, displayed mathematics, tables, verbatim content, or
 other protected regions. Reflow is disabled when wrapping is disabled.
 
 ### Disabling the formatter
@@ -399,7 +411,7 @@ The following arguments can be passed on the command line.
 | `--recursive`          | `-r`  |         | Recursively search for files to format |
 | `--nowrap`             | `-n`  |         | Do not wrap long lines |
 | `--wraplen <N>`        | `-l`  | `80`    | Line length for wrapping |
-| `--reflow <MODE>`      |       | `off`   | Paragraph reflow strategy: `off`, `minimal`, or `canonical` |
+| `--reflow <MODE>`      |       | `off`   | Paragraph reflow strategy: `off`, `minimal`, `canonical`, or `semantic` |
 | `--format-options`     |       |         | Put each item in multiline optional arguments on its own line |
 | `--tabsize <N>`        | `-t`  | `2`     | Number of characters to use as tab size |
 | `--usetabs`            |       |         | Use tabs instead of spaces for indentation |
@@ -429,7 +441,7 @@ The first example in each row is the default value.
 | `wrap`           | bool     | `true`                 | Wrap long lines |
 | `wraplen`        | int      | `80`, `100`            | Line length for wrapping |
 | `wrapmin`        | int      | `70`, `90`             | Soft target for line breaks |
-| `reflow`         | str      | `"off"`, `"minimal"`  | Paragraph reflow strategy; also accepts `"canonical"` |
+| `reflow`         | str      | `"off"`, `"minimal"`  | Paragraph reflow strategy; also accepts `"canonical"` and `"semantic"` |
 | `format-options` | bool     | `false`                | Put each item in multiline optional arguments on its own line |
 | `tabsize`        | int      | `2`, `4`               | Number of characters to use as tab size |
 | `tabchar`        | str      | `"space"`, `"tab"`     | Character to use for indentation |

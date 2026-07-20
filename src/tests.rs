@@ -11,7 +11,7 @@ use std::path::PathBuf;
 
 #[test]
 fn minimal_reflow_preserves_a_higher_target_layout() {
-    let source = "Spin textures are ubiquitous in antiferromagnets, yet their consequences for altermagnets remain largely unexplored. We show that smooth spatial variations of the N\\'eel order act on itinerant electrons as emergent gauge fields, producing strong, tunable in-plane anisotropies in transport and optical absorption.\n";
+    let source = "The paragraph reflow pass keeps each printed line within the chosen width, and internationalization-of-the-formatter shows how one long word ends a line early. The remaining sentence fills the rest of the paragraph across a couple of lines here today.\n";
     let file = PathBuf::from("input.tex");
     let mut canonical_args = Args::default();
     canonical_args.wraplen = 100;

@@ -43,7 +43,7 @@ pub fn get_cli_command() -> Command {
             Arg::new("reflow")
                 .long("reflow")
                 .value_name("MODE")
-                .value_parser(["off", "minimal", "canonical"])
+                .value_parser(["off", "minimal", "canonical", "semantic"])
                 .help("Paragraph reflow strategy"),
         )
         .arg(

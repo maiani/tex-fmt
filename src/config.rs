@@ -137,6 +137,7 @@ pub fn get_config_args(
         Some("off") => Some(ReflowMode::Off),
         Some("minimal") => Some(ReflowMode::Minimal),
         Some("canonical") => Some(ReflowMode::Canonical),
+        Some("semantic") => Some(ReflowMode::Semantic),
         _ => None,
     };
 

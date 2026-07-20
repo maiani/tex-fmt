@@ -188,9 +188,19 @@ edits.
 
 With \texttt{--reflow canonical}, eligible paragraph line breaks are removed
 before wrapping, producing a consistent layout without preferring the input
-boundaries. Comments, displayed mathematics, tables, verbatim content, and
-other protected regions are not reflowed. Reflow is disabled when wrapping is
-disabled.
+boundaries.
+
+With \texttt{--reflow semantic}, every existing line break is kept and a new
+break is added after each sentence, approximating one sentence per line. A
+period ends a sentence only when it is followed by a space and is not part of a
+decimal, an initial, or a common abbreviation such as \texttt{e.g.} or
+\texttt{Fig.}. A sentence still longer than \texttt{wraplen} is broken at clause
+boundaries (\texttt{,}, \texttt{;}, \texttt{:}), never inside math, braces,
+brackets, or parentheses, before the ordinary wrapping pass handles anything
+that remains too long.
+
+Comments, displayed mathematics, tables, verbatim content, and other protected
+regions are not reflowed. Reflow is disabled when wrapping is disabled.
 
 \pagebreak
 
@@ -276,7 +286,7 @@ The following arguments can be passed on the command line.
       Line length for wrapping \\
       \texttt{--reflow <MODE>}      &       & \texttt{off}   &
       Paragraph reflow strategy: \texttt{off}, \texttt{minimal},
-      or \texttt{canonical} \\
+      \texttt{canonical}, or \texttt{semantic} \\
       \texttt{--format-options}     &       &         & Format
       multiline optional arguments \\
       \texttt{--tabsize <N>}        & \texttt{-t}  & \texttt{2}     &
@@ -333,8 +343,9 @@ The first example in each row is the default value.
       \texttt{wrapmin}        & int      & \texttt{70}, \texttt{90}
       & Soft target for line breaks \\
       \texttt{reflow}         & str      & \texttt{"off"},
-      \texttt{"minimal"} & Paragraph reflow strategy; \\
-                            & & & also accepts \texttt{"canonical"} \\
+      \texttt{"minimal"} & Paragraph reflow strategy; also \\
+                            & & & accepts \texttt{"canonical"} and
+      \texttt{"semantic"} \\
       \texttt{format-options} & bool     & \texttt{false}
       & Format multiline optional arguments \\
       \texttt{tabsize}        & int      & \texttt{2}, \texttt{4}

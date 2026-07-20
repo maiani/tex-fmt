@@ -1,4 +1,78 @@
 //! Utilities for redistributing text across paragraph lines.
+//!
+//! This pass runs before indentation and line wrapping. It groups consecutive
+//! source lines into prose paragraphs (see [`reflow_lines`]) and rewrites the
+//! line breaks within each one according to the configured [`ReflowMode`]. The
+//! three modes differ in how much they respect the authored breaks:
+//!
+//! - [`ReflowMode::Canonical`] ignores them, producing a consistent layout.
+//! - [`ReflowMode::Minimal`] treats them as preferred break points and moves as
+//!   few as possible, minimising the version-control diff.
+//! - [`ReflowMode::Semantic`] keeps every authored break and only adds new ones.
+//!
+//! # Canonical
+//!
+//! `canonical_reflow` joins the paragraph onto a single line and lets the later
+//! wrapping pass rebreak it from scratch. The input breaks carry no weight, so
+//! the result depends only on `wraplen`/`wrapmin` and not on where the author
+//! happened to break. There is no scoring: all the work is delegated to the
+//! wrapping pass.
+//!
+//! # Minimal
+//!
+//! `minimally_reflow` is the non-trivial mode. It treats the authored breaks as
+//! *anchors* and keeps an anchor unless moving it is forced by the width limits
+//! — the aim is a small diff after a prose edit, not any interpretation of the
+//! breaks. It is solved as a shortest-path problem:
+//!
+//! 1. The paragraph is joined into a single string, recording the byte offset of
+//!    each authored break as an anchor (`join_paragraph`).
+//! 2. Every position at which a line may legally break is enumerated
+//!    (`legal_breaks`): after any wrap character, plus the anchors themselves.
+//!    These are the nodes of a DAG whose edges are candidate lines.
+//! 3. A dynamic program finds the path (choice of breaks) of minimum total
+//!    `LayoutCost`, a tuple compared lexicographically. Its terms are ordered
+//!    by priority so that each is only a tie-breaker for the ones above it:
+//!    - `overflow` — the hard `wraplen` limit dominates everything.
+//!    - `underflow` — then avoid lines shorter than the `wrapmin` target.
+//!    - `changed_breaks` — then reuse as many authored breaks as possible; this
+//!      is the term that actually keeps the diff small.
+//!    - `displacement`, `raggedness`, `lines` — remaining ties are broken toward
+//!      breaks near their original position, even line lengths, and compactness.
+//!
+//!    Placing `overflow`/`underflow` above `changed_breaks` means correctness of
+//!    line width is never sacrificed to save a diff; placing `changed_breaks`
+//!    above `raggedness` means a slightly uneven but stable layout is preferred
+//!    to a prettier but noisier one. See `LayoutCost` and `transition_cost`
+//!    for the exact per-line formulas.
+//!
+//! # Semantic
+//!
+//! `semantically_reflow` never joins or removes breaks. It keeps each authored
+//! line and additionally splits it after every sentence boundary (a run of
+//! `.`/`!`/`?` followed by space), so the result approximates one sentence per
+//! line while leaving mid-sentence authored breaks in place. Sentence detection
+//! is a heuristic: it skips terminators inside inline math and, for periods,
+//! after digits, single-letter initials, and the abbreviations in
+//! `NO_BREAK_ABBREVIATIONS`. A sentence that is still longer than `wraplen` is
+//! then split at clause boundaries (`,`/`;`/`:`, outside math and any brace,
+//! bracket, or parenthesis — see `clause_breaks`), packing whole clauses onto
+//! each line up to the limit (`pack_clauses`); anything still too long is left
+//! to the wrapping pass, which breaks it at word boundaries. No width scoring is
+//! done, and length is measured on the trimmed text.
+//!
+//! # Parameters
+//!
+//! - `wraplen` is the hard maximum line length; `wrapmin` is a soft target, not
+//!   a strict minimum. Both are measured including indentation width.
+//! - `wrap_chars` defines where a line may break in minimal mode.
+//! - `tabsize` converts leading tabs to a width for length accounting.
+//! - Reflow requires wrapping to be enabled and never runs on `.bib`, `.sty`,
+//!   or `.cls` files (`NO_REFLOW_EXTENSIONS`).
+//!
+//! All modes only ever touch prose. Comments, display and inline math, tables,
+//! verbatim regions, and explicitly ignored regions are detected line by line
+//! and act as paragraph boundaries, so their bytes pass through untouched.
 
 use crate::args::{Args, ReflowMode};
 use crate::comments::find_comment_index;
@@ -22,6 +96,16 @@ const BOUNDARY_STARTS: [&str; 4] = ["\\[", "\\]", "$$", "}"];
 /// Commands with run-in headings which may begin a paragraph.
 const HEADING_STARTS: [&str; 2] = ["\\paragraph", "\\subparagraph"];
 
+/// Multi-letter words after which a period does not end a sentence.
+///
+/// Single-letter tokens (initials such as `A.`, and the components of `e.g.`
+/// and `i.e.`) are handled separately, so only abbreviations of two or more
+/// letters need to be listed here. The comparison is case-insensitive.
+const NO_BREAK_ABBREVIATIONS: [&str; 18] = [
+    "etc", "cf", "vs", "al", "resp", "approx", "Fig", "Eq", "Sec", "Ref", "No",
+    "vol", "pp", "Dr", "Mr", "Mrs", "Ms", "Prof",
+];
+
 /// Display math environments in which lines are never reflowed.
 const MATH_ENVS: [&str; 8] = [
     "equation",
@@ -35,6 +119,25 @@ const MATH_ENVS: [&str; 8] = [
 ];
 
 /// Lexicographic cost for a possible paragraph layout.
+///
+/// The fields are compared in declaration order (see the [`Ord`] impl), so each
+/// term is a strict tie-breaker for the ones above it. This ordering encodes the
+/// priorities of minimal reflow, from most to least important:
+///
+/// 1. `overflow` — total characters by which lines exceed `wraplen`. This is the
+///    hard limit, so it dominates every other consideration.
+/// 2. `underflow` — total characters by which non-final lines fall short of the
+///    `wrapmin` target (with exceptions, see [`transition_cost`]). Avoids
+///    leaving lines wastefully short.
+/// 3. `changed_breaks` — number of authored breaks removed plus new breaks
+///    introduced. This is what keeps the diff minimal: a layout that reuses the
+///    input's breaks scores zero here.
+/// 4. `displacement` — for each new break, how far it sits from the nearest
+///    authored break. Among layouts that change the same number of breaks,
+///    prefer the one whose new breaks land closest to where breaks already were.
+/// 5. `raggedness` — total distance of non-final lines from `wrapmin`, breaking
+///    ties toward more even line lengths.
+/// 6. `lines` — number of lines, preferring the more compact layout last.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 struct LayoutCost {
     overflow: usize,
@@ -194,6 +297,12 @@ fn join_paragraph(lines: &[String]) -> (String, Vec<usize>) {
     (text, anchors)
 }
 
+/// Enumerate every byte position at which the joined paragraph may be broken.
+///
+/// Breaks are allowed after any wrap character (typically a space) that is not
+/// escaped and not inside a trailing comment, plus the paragraph start and end
+/// and all authored `anchors`. The returned positions are sorted and unique and
+/// become the nodes of the shortest-path search in [`minimally_reflow`].
 fn legal_breaks(text: &str, anchors: &[usize], args: &Args) -> Vec<usize> {
     let mut breaks = vec![0, text.len()];
     let mut previous = None;
@@ -225,6 +334,23 @@ fn nearest_anchor(position: usize, anchors: &[usize]) -> usize {
         .unwrap_or(0)
 }
 
+/// Cost of emitting a single line spanning `start..end` of the joined text.
+///
+/// This is the edge weight in the shortest-path formulation: a candidate line
+/// runs from break `start` to break `end`, and `next_end` is the following
+/// break (used to look one line ahead). The returned [`LayoutCost`] is summed
+/// along a path and compared lexicographically, so the field values here are
+/// tuned per line:
+///
+/// - `underflow`/`raggedness` are waived for the final line, which is allowed
+///   to be short. `underflow` is also waived when the line already reaches
+///   `wrapmin`, or when it *cannot* reach it without also pulling in the next
+///   chunk and overshooting — this is what lets a legitimately short break at
+///   the end of a paragraph survive.
+/// - `changed_breaks` counts authored anchors that this line swallows plus one
+///   if `end` is a newly introduced (non-final, non-anchor) break.
+/// - `displacement` is only charged for a new break, measuring its distance to
+///   the nearest authored anchor.
 fn transition_cost(
     context: &LayoutContext,
     start: usize,
@@ -273,6 +399,15 @@ fn transition_cost(
 }
 
 /// Reflow a paragraph while treating its existing breaks as preferred anchors.
+///
+/// The paragraph is joined into a single string whose legal break positions
+/// form the nodes of a directed acyclic graph: an edge from break `i` to break
+/// `j > i` represents laying out the text `breaks[i]..breaks[j]` as one line,
+/// weighted by [`transition_cost`]. `costs[k]` holds the minimum total
+/// [`LayoutCost`] of any layout ending at `breaks[k]`, and `previous[k]` records
+/// the predecessor on that best path. Because the breaks are sorted, relaxing
+/// them left to right computes the global optimum in one forward pass; the
+/// chosen breaks are then recovered by walking `previous` back from the end.
 fn minimally_reflow(lines: &[String], args: &Args) -> String {
     let (text, anchors) = join_paragraph(lines);
     if text.is_empty() {
@@ -304,6 +439,9 @@ fn minimally_reflow(lines: &[String], args: &Args) -> String {
         } else {
             continuation_indent
         };
+        // Candidate line lengths grow monotonically with `end_index`, so once a
+        // within-limit break has been seen, the first overflowing one means all
+        // later breaks overflow too and can be pruned.
         let mut saw_acceptable_break = false;
         for end_index in start_index + 1..breaks.len() {
             let segment_cost = transition_cost(
@@ -345,9 +483,248 @@ fn minimally_reflow(lines: &[String], args: &Args) -> String {
     output
 }
 
+/// Collapse a paragraph onto one line, discarding its authored breaks.
+///
+/// The later wrapping pass rebreaks the joined text, so no break scoring is
+/// needed here.
 fn canonical_reflow(lines: &[String]) -> String {
     let (text, _) = join_paragraph(lines);
     format!("{text}{LINE_END}")
+}
+
+/// Characters that terminate a sentence.
+fn is_terminator(character: char) -> bool {
+    matches!(character, '.' | '!' | '?')
+}
+
+/// Check whether a period at `chars[index]` is part of an abbreviation or
+/// number rather than a genuine sentence end.
+///
+/// Only periods are ambiguous; `!` and `?` always terminate. A period is
+/// treated as non-terminal when it directly follows a digit (decimals such as
+/// `3.14` and enumerators such as `Section 3.`), a single letter (an initial or
+/// a component of a dotted abbreviation like `e.g.`), or a listed abbreviation.
+fn blocks_sentence_break(chars: &[(usize, char)], index: usize) -> bool {
+    if chars[index].1 != '.' {
+        return false;
+    }
+    let Some(previous) = index.checked_sub(1).map(|i| chars[i].1) else {
+        return true;
+    };
+    if previous.is_ascii_digit() {
+        return true;
+    }
+    if !previous.is_alphabetic() {
+        return false;
+    }
+    let mut start = index;
+    while start > 0 && chars[start - 1].1.is_alphabetic() {
+        start -= 1;
+    }
+    let word: String = chars[start..index].iter().map(|&(_, c)| c).collect();
+    word.chars().count() <= 1
+        || NO_BREAK_ABBREVIATIONS
+            .iter()
+            .any(|abbreviation| abbreviation.eq_ignore_ascii_case(&word))
+}
+
+/// Find byte positions at which to break a line into sentences.
+///
+/// A break is placed immediately after a run of sentence terminators when it is
+/// outside inline math, is followed by whitespace and further text, and is not
+/// blocked by [`blocks_sentence_break`]. Breaks are never placed inside a
+/// trailing comment.
+fn sentence_breaks(line: &str, pattern: &Pattern) -> Vec<usize> {
+    let limit = find_comment_index(line, pattern).unwrap_or(line.len());
+    let chars: Vec<(usize, char)> = line.char_indices().collect();
+    let mut breaks = Vec::new();
+    let mut in_math = false;
+    let mut index = 0;
+    while index < chars.len() {
+        let (byte, character) = chars[index];
+        if byte >= limit {
+            break;
+        }
+        let escaped = index > 0 && chars[index - 1].1 == '\\';
+        match character {
+            '$' if !escaped => in_math = !in_math,
+            '(' if escaped => in_math = true,
+            ')' if escaped => in_math = false,
+            _ if !in_math && is_terminator(character) => {
+                let mut last = index;
+                while last + 1 < chars.len() && is_terminator(chars[last + 1].1)
+                {
+                    last += 1;
+                }
+                let after = chars[last].0 + chars[last].1.len_utf8();
+                let tail = line.get(after..limit).unwrap_or("");
+                let ends_sentence = tail.starts_with(char::is_whitespace)
+                    && !tail.trim().is_empty();
+                if ends_sentence && !blocks_sentence_break(&chars, index) {
+                    breaks.push(after);
+                }
+                index = last + 1;
+                continue;
+            }
+            _ => {}
+        }
+        index += 1;
+    }
+    breaks
+}
+
+/// Characters that terminate a clause.
+fn is_clause_boundary(character: char) -> bool {
+    matches!(character, ',' | ';' | ':')
+}
+
+/// Find byte positions at which to break a line at clause boundaries.
+///
+/// A break is placed immediately after a comma, semicolon, or colon that is
+/// followed by whitespace and further text. Breaks are only taken at the top
+/// level: positions inside inline math, braces, brackets, or parentheses are
+/// skipped so that punctuation within `\cite{a, b}`, `[a, b]`, math, or a
+/// parenthetical is never split. Breaks are never placed inside a comment.
+fn clause_breaks(line: &str, pattern: &Pattern) -> Vec<usize> {
+    let limit = find_comment_index(line, pattern).unwrap_or(line.len());
+    let chars: Vec<(usize, char)> = line.char_indices().collect();
+    let mut breaks = Vec::new();
+    let mut in_math = false;
+    let (mut brace, mut bracket, mut paren) = (0_i32, 0_i32, 0_i32);
+    for index in 0..chars.len() {
+        let (byte, character) = chars[index];
+        if byte >= limit {
+            break;
+        }
+        let escaped = index > 0 && chars[index - 1].1 == '\\';
+        match character {
+            '$' if !escaped => in_math = !in_math,
+            '(' if escaped => in_math = true,
+            ')' if escaped => in_math = false,
+            '{' if !escaped => brace += 1,
+            '}' if !escaped => brace = (brace - 1).max(0),
+            '[' if !escaped => bracket += 1,
+            ']' if !escaped => bracket = (bracket - 1).max(0),
+            '(' if !escaped => paren += 1,
+            ')' if !escaped => paren = (paren - 1).max(0),
+            _ if !in_math
+                && brace == 0
+                && bracket == 0
+                && paren == 0
+                && is_clause_boundary(character) =>
+            {
+                let after = byte + character.len_utf8();
+                let tail = line.get(after..limit).unwrap_or("");
+                if tail.starts_with(char::is_whitespace)
+                    && !tail.trim().is_empty()
+                {
+                    breaks.push(after);
+                }
+            }
+            _ => {}
+        }
+    }
+    breaks
+}
+
+/// Greedily choose clause breaks that keep each line within `wraplen`.
+///
+/// Given a too-long sentence segment `line[start..end]` and the clause
+/// boundaries it contains, this packs as many whole clauses onto each line as
+/// fit and returns the interior break positions. A single clause longer than
+/// `wraplen` is emitted on its own line and left to the wrapping pass. Length is
+/// measured on the trimmed text of each candidate line.
+fn pack_clauses(
+    line: &str,
+    start: usize,
+    end: usize,
+    clauses: &[usize],
+    wraplen: usize,
+) -> Vec<usize> {
+    let mut candidates: Vec<usize> = clauses
+        .iter()
+        .copied()
+        .filter(|&c| start < c && c < end)
+        .collect();
+    candidates.push(end);
+
+    let mut cuts = Vec::new();
+    let mut line_start = start;
+    let mut index = 0;
+    while index < candidates.len() {
+        // Extend the current line to the farthest clause boundary that fits.
+        let mut fit = None;
+        while index < candidates.len()
+            && line[line_start..candidates[index]].trim().chars().count()
+                <= wraplen
+        {
+            fit = Some(candidates[index]);
+            index += 1;
+        }
+        // If not even the first clause fits, emit it anyway and move on.
+        let position = fit.unwrap_or_else(|| {
+            let position = candidates[index];
+            index += 1;
+            position
+        });
+        if position != end {
+            cuts.push(position);
+        }
+        line_start = position;
+    }
+    cuts
+}
+
+/// Reflow a paragraph by keeping authored breaks and adding sentence breaks.
+///
+/// Each authored line is preserved as its own break and additionally split at
+/// internal sentence boundaries, so this mode only ever adds breaks. A sentence
+/// that would still exceed `wraplen` is additionally split at clause boundaries,
+/// packing whole clauses onto each line (`pack_clauses`); any clause that
+/// remains too long even alone is left to the wrapping pass, which breaks it at
+/// word boundaries. Length is measured on the trimmed text, ignoring the
+/// indentation added later, so the wrapping pass remains the final authority on
+/// width.
+fn semantically_reflow(lines: &[String], args: &Args) -> String {
+    let mut output = String::new();
+    for line in lines {
+        let pattern = Pattern::new(line);
+        let sentences = sentence_breaks(line, &pattern);
+        let clauses = clause_breaks(line, &pattern);
+
+        // Sentence cuts always apply; clause cuts apply only within a sentence
+        // segment that is still longer than the wrap limit.
+        let mut segments = Vec::with_capacity(sentences.len() + 2);
+        segments.push(0);
+        segments.extend(sentences);
+        segments.push(line.len());
+        let mut cuts = Vec::new();
+        for window in segments.windows(2) {
+            let (start, end) = (window[0], window[1]);
+            cuts.push(start);
+            if line[start..end].trim().chars().count() > args.wraplen {
+                cuts.extend(pack_clauses(
+                    line,
+                    start,
+                    end,
+                    &clauses,
+                    args.wraplen,
+                ));
+            }
+        }
+        cuts.push(line.len());
+        cuts.sort_unstable();
+        cuts.dedup();
+
+        for window in cuts.windows(2) {
+            let fragment = line[window[0]..window[1]].trim();
+            if !fragment.is_empty() {
+                output.push_str(fragment);
+                output.push_str(LINE_END);
+            }
+        }
+    }
+    output
 }
 
 fn flush_paragraph(
@@ -366,6 +743,9 @@ fn flush_paragraph(
             output.push_str(&minimally_reflow(paragraph, args));
         }
         ReflowMode::Canonical => output.push_str(&canonical_reflow(paragraph)),
+        ReflowMode::Semantic => {
+            output.push_str(&semantically_reflow(paragraph, args));
+        }
     }
     paragraph.clear();
 }

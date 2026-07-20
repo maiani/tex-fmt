@@ -68,6 +68,7 @@ pub fn get_cli_args(matches: Option<ArgMatches>) -> OptionArgs {
             Some("off") => Some(ReflowMode::Off),
             Some("minimal") => Some(ReflowMode::Minimal),
             Some("canonical") => Some(ReflowMode::Canonical),
+            Some("semantic") => Some(ReflowMode::Semantic),
             _ => None,
         };
     let args = OptionArgs {
